@@ -1,0 +1,17 @@
+D:\skill.roadmap\backend\config\settings.py:44: UserWarning: Django is running in DEBUG mode. Disable DJANGO_DEBUG for production.
+  _warnings.warn(
+D:\skill.roadmap\backend\config\settings.py:44: UserWarning: Django is running in DEBUG mode. Disable DJANGO_DEBUG for production.
+  _warnings.warn(
+Watching for file changes with StatReloader
+D:\skill.roadmap\backend\apps\admins\serializers.py changed, reloading.
+D:\skill.roadmap\backend\config\settings.py:44: UserWarning: Django is running in DEBUG mode. Disable DJANGO_DEBUG for production.
+  _warnings.warn(
+Watching for file changes with StatReloader
+D:\skill.roadmap\backend\apps\admins\views.py changed, reloading.
+D:\skill.roadmap\backend\config\settings.py:44: UserWarning: Django is running in DEBUG mode. Disable DJANGO_DEBUG for production.
+  _warnings.warn(
+Watching for file changes with StatReloader
+D:\skill.roadmap\backend\apps\admins\urls.py changed, reloading.
+D:\skill.roadmap\backend\config\settings.py:44: UserWarning: Django is running in DEBUG mode. Disable DJANGO_DEBUG for production.
+  _warnings.warn(
+Watching for file changes with StatReloader

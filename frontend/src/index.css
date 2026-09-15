@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+/*
+ * SkillMap AI — Premium design system
+ * Clean white/light UI with navy/blue accents.
+ * Designed for Smart India Hackathon presentation quality.
+ */
+@theme {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  /* Navy/Blue brand palette */
+  --color-brand-50: #f0f4ff;
+  --color-brand-100: #dce4ff;
+  --color-brand-200: #b9caff;
+  --color-brand-300: #8ba8ff;
+  --color-brand-400: #5b7dff;
+  --color-brand-500: #3a57f5;
+  --color-brand-600: #2a3ee8;
+  --color-brand-700: #2431c7;
+  --color-brand-800: #1d27a0;
+  --color-brand-900: #18227d;
+  --color-brand-950: #101a5e;
+
+  /* Navy sidebar palette */
+  --color-navy-700: #1a3085;
+  --color-navy-800: #16287d;
+  --color-navy-900: #0f1d5e;
+  --color-navy-950: #0a153f;
+
+  /* Semantic colors */
+  --color-success-50: #f0fdf4;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #f59e0b;
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+}
+
+/* Base styles */
+body {
+  @apply bg-gray-50 text-gray-800 antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  @apply bg-brand-200 text-brand-900;
+}
+
+/* Focus ring */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand-500;
+}
+
+/* Animations */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Gradient utilities */
+.gradient-brand {
+  background: linear-gradient(135deg, #3a57f5 0%, #2431c7 100%);
+}
+
+.gradient-brand-soft {
+  background: linear-gradient(135deg, #f0f4ff 0%, #dce4ff 100%);
+}
+
+.gradient-navy {
+  background: linear-gradient(135deg, #16287d 0%, #0a153f 100%);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Subtle shadow */
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
+}

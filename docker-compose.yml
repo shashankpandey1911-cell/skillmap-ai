@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: skillmap-db
+    environment:
+      POSTGRES_DB: skillmap
+      POSTGRES_USER: skillmap
+      POSTGRES_PASSWORD: skillmap
+    ports:
+      - "5432:5432"
+    volumes:
+      - skillmap_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  skillmap_pgdata:

@@ -1,0 +1,26 @@
+Watching for file changes with StatReloader
+Exception in thread django-main-thread:
+Traceback (most recent call last):
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\django\utils\autoreload.py", line 83, in wrapper
+    raise e
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\django\utils\autoreload.py", line 66, in wrapper
+    fn(*args, **kwargs)
+    ~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\django\core\management\commands\runserver.py", line 134, in inner_run
+    self.check(**check_kwargs)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\shash\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\django\core\management\base.py", line 575, in check
+    raise SystemCheckError(msg)
+django.core.management.base.SystemCheckError: SystemCheckError: System check identified some issues:
+
+ERRORS:
+users.User.avatar: (fields.E210) Cannot use ImageField because Pillow is not installed.
+	HINT: Get Pillow at https://pypi.org/project/Pillow/ or run command "python -m pip install Pillow".
+
+System check identified 1 issue (0 silenced).

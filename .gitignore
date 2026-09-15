@@ -1,0 +1,30 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+db.sqlite3
+staticfiles/
+media/
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+coverage/
+*.local
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+npm-debug.log*
