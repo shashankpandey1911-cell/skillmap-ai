@@ -19,8 +19,15 @@ export interface RegisterPayload {
 
 export interface RegisterResponse {
   user: User
-  access: string
-  refresh: string
+  detail?: string
+  /** Present only when email verification is disabled (local demos). */
+  access?: string
+  refresh?: string
+}
+
+export interface VerifyEmailResponse {
+  detail: string
+  status: 'verified' | 'already_verified' | 'expired' | 'invalid'
 }
 
 export async function login(email: string, password: string): Promise<User> {
@@ -29,10 +36,15 @@ export async function login(email: string, password: string): Promise<User> {
   return data.user
 }
 
-export async function register(payload: RegisterPayload): Promise<User> {
+export async function register(payload: RegisterPayload): Promise<User | null> {
   const data = await post<RegisterResponse>('/auth/register', payload)
-  storeTokens(data.access, data.refresh)
-  return data.user
+  if (data.access && data.refresh) {
+    // Verification disabled: sign in immediately (legacy behaviour).
+    storeTokens(data.access, data.refresh)
+    return data.user
+  }
+  // Verification required: tokens withheld until the email link is used.
+  return null
 }
 
 export async function me(): Promise<User> {
@@ -50,4 +62,14 @@ export async function forgotPassword(email: string): Promise<void> {
 
 export async function resetPassword(uidb64: string, token: string, password: string): Promise<void> {
   await post<{ detail: string }>('/auth/reset-password', { uidb64, token, password })
+}
+
+/** Consumes the emailed verification link (uid + token). */
+export async function verifyEmail(uidb64: string, token: string): Promise<VerifyEmailResponse> {
+  return post<VerifyEmailResponse>('/auth/verify-email', { uidb64, token })
+}
+
+/** Emails a fresh verification link. Safe to call for unknown emails. */
+export async function resendVerification(email: string): Promise<void> {
+  await post<{ detail: string }>('/auth/resend-verification', { email })
 }

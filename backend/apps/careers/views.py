@@ -234,4 +234,4 @@ class AdminRequirementDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["career"] = get_object_or_404(Career, pk=self.kwargs["pk"])
-        return context
+        return context

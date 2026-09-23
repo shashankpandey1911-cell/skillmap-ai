@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.assessments.models import StudentAttempt
-from apps.core.permissions import IsStudent
+from apps.core.permissions import IsVerifiedStudent
 from apps.skills.models import UserSkill
 from apps.users.serializers import UserSerializer
 
@@ -31,7 +31,7 @@ def _me_payload(user) -> dict:
 class StudentMeView(APIView):
     """GET/PATCH the authenticated student's digital career profile."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def get(self, request):
         return Response(_me_payload(request.user))
@@ -50,7 +50,7 @@ class StudentMeView(APIView):
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = ProjectSerializer
     pagination_class = None  # a student's own projects: plain list
 
@@ -64,7 +64,7 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Owner-scoped: other students' projects are indistinguishable from 404."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
@@ -72,7 +72,7 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CertificationListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = CertificationSerializer
     pagination_class = None
 
@@ -84,7 +84,7 @@ class CertificationListCreateView(generics.ListCreateAPIView):
 
 
 class CertificationDetailView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = CertificationSerializer
 
     def get_queryset(self):
@@ -94,7 +94,7 @@ class CertificationDetailView(generics.RetrieveUpdateDestroyAPIView):
 class StudentDashboardSummaryView(APIView):
     """Comprehensive student dashboard data."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def get(self, request):
         profile, _ = StudentProfile.objects.get_or_create(user=request.user)

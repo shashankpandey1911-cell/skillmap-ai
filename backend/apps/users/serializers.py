@@ -2,6 +2,7 @@
 
 import re
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions as django_exceptions
@@ -9,6 +10,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.users.services import UNVERIFIED_LOGIN_MESSAGE
 from apps.students.models import StudentProfile
 
 User = get_user_model()
@@ -31,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "phone",
             "avatar",
+            "is_email_verified",
         ]
         read_only_fields = ["id", "username"]
 
@@ -100,6 +103,10 @@ class RegisterSerializer(serializers.Serializer):
             first_name=first_name,
             last_name=last_name,
             role=validated_data.pop("role"),
+            # Self-registered accounts start unverified when the gate is on;
+            # environments with EMAIL_VERIFICATION_REQUIRED=False (tests,
+            # local demos) create users pre-verified.
+            is_email_verified=not settings.EMAIL_VERIFICATION_REQUIRED,
         )
         user.set_password(password)  # hashed by Django's default (PBKDF2)
         user.save()
@@ -145,6 +152,10 @@ class LoginSerializer(serializers.Serializer):
                 "Unable to log in with the provided credentials."
             )
 
+        if not user.is_email_verified and settings.EMAIL_VERIFICATION_REQUIRED:
+            # Distinct, actionable message so the frontend can offer a resend.
+            raise serializers.ValidationError(UNVERIFIED_LOGIN_MESSAGE)
+
         refresh = RefreshToken.for_user(user)
         return {
             "access": str(refresh.access_token),
@@ -154,6 +165,17 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    """Payload posted by the /auth/verify-email page (link query params)."""
+
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+
+
+class ResendVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 

@@ -4,7 +4,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsStudent
+from apps.core.permissions import IsVerifiedStudent
 from apps.skills.models import Skill, UserSkill
 from apps.students.models import StudentProfile
 
@@ -38,7 +38,7 @@ class AIStatusView(APIView):
 
 class ResumeExtractView(APIView):
     """POST /ai/extract-resume — extract skills/projects from resume text."""
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request):
         ser = ResumeExtractRequestSerializer(data=request.data)
@@ -49,7 +49,7 @@ class ResumeExtractView(APIView):
 
 class ResumeApproveView(APIView):
     """POST /ai/approve-extraction — save approved extracted data to profile."""
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request):
         ser = ApprovedExtractRequestSerializer(data=request.data)
@@ -92,7 +92,7 @@ class ResumeApproveView(APIView):
 
 class AICareerRecommendationView(APIView):
     """POST /ai/career-recommendation — AI-enhanced career suggestions."""
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request):
         user = request.user
@@ -136,7 +136,7 @@ class AICareerRecommendationView(APIView):
 
 class AILearningRecommendationView(APIView):
     """POST /ai/learning-recommendation — personalized learning roadmap."""
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request):
         career_title = request.data.get("career_title", "")
@@ -195,7 +195,7 @@ class AILearningRecommendationView(APIView):
 
 class AIOpportunityExplanationView(APIView):
     """POST /ai/opportunity-explanation — explain why an opportunity matches."""
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request):
         opportunity_id = request.data.get("opportunity_id")

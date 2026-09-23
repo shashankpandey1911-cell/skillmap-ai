@@ -19,3 +19,9 @@ class PasswordResetThrottle(AnonRateThrottle):
     """Rate limit password reset requests."""
 
     scope = "password_reset"
+
+
+class ResendVerificationThrottle(AnonRateThrottle):
+    """Rate limit email-verification requests (verify + resend)."""
+
+    scope = "email_verification"

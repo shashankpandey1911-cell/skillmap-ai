@@ -18,14 +18,30 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenBlacklistView
 
-from apps.users.throttling import LoginThrottle, RegisterThrottle, PasswordResetThrottle
+from apps.users.throttling import (
+    LoginThrottle,
+    RegisterThrottle,
+    PasswordResetThrottle,
+    ResendVerificationThrottle,
+)
+from apps.users.services import (
+    ALREADY_VERIFIED,
+    EXPIRED,
+    INVALID,
+    UNVERIFIED_LOGIN_MESSAGE,
+    VERIFIED,
+    send_verification_email,
+    verify_email_token,
+)
 
 from apps.users.serializers import (
     ForgotPasswordSerializer,
     LoginSerializer,
     RegisterSerializer,
+    ResendVerificationSerializer,
     ResetPasswordSerializer,
     UserSerializer,
+    VerifyEmailSerializer,
 )
 
 User = get_user_model()
@@ -39,12 +55,24 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        detail = "Check your email to verify your account."
+        if settings.EMAIL_VERIFICATION_REQUIRED:
+            # Console backend in DEBUG; never blocks registration — the user
+            # can request a fresh link via /auth/resend-verification.
+            send_verification_email(user)
+            # No tokens until the email is confirmed: login is the gate.
+            return Response({"user": UserSerializer(user).data, "detail": detail},
+                            status=status.HTTP_201_CREATED)
+
+        # Verification disabled (tests / local demos): keep the legacy
+        # auto-login response shape used by the API suites.
         refresh = RefreshToken.for_user(user)
         return Response(
             {
-                "user": UserSerializer(user).data,
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
+                "user": UserSerializer(user).data,
+                "detail": detail,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -58,6 +86,55 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class VerifyEmailView(APIView):
+    """POST /auth/verify-email — consumes the emailed verification link."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ResendVerificationThrottle]
+
+    def post(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        outcome, _user = verify_email_token(
+            serializer.validated_data["uidb64"], serializer.validated_data["token"]
+        )
+        messages = {
+            VERIFIED: "Your email has been verified. You can now sign in.",
+            ALREADY_VERIFIED: "This email address has already been verified. You can sign in.",
+            EXPIRED: "This verification link has expired. Please request a new one.",
+            INVALID: "This verification link is invalid.",
+        }
+        res = Response({"detail": messages[outcome], "status": outcome})
+        res.status_code = (
+            status.HTTP_200_OK if outcome in (VERIFIED, ALREADY_VERIFIED) else status.HTTP_400_BAD_REQUEST
+        )
+        return res
+
+
+class ResendVerificationView(APIView):
+    """POST /auth/resend-verification — emails a fresh link.
+
+    Accepts either an email address (public form) or an authenticated user
+    (banner retry). Always returns the same response to prevent enumeration.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ResendVerificationThrottle]
+
+    def post(self, request):
+        serializer = ResendVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"].lower()
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user and user.is_active and not user.is_email_verified:
+            send_verification_email(user)
+        return Response(
+            {"detail": "If an unverified account exists for that email, a new verification link has been sent."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class LogoutView(TokenBlacklistView):
@@ -133,5 +210,11 @@ class ResetPasswordView(APIView):
             )
 
         user.set_password(serializer.validated_data["password"])
-        user.save()
-        return Response({"detail": "Your password has been reset. You can now log in."})
+        # Completing a password reset proves control of the mailbox, so
+        # clear any pending verification at the same time.
+        if not user.is_email_verified:
+            user.is_email_verified = True
+            user.save(update_fields=["password", "is_email_verified"])
+        else:
+            user.save(update_fields=["password"])
+        return Response({"detail": "Your password has been reset. You can now log in."})

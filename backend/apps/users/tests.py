@@ -2,6 +2,7 @@
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
+from django.test import override_settings
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
@@ -42,6 +43,8 @@ class RegisterTests(APITestCase):
     def test_register_student_creates_user_profile_and_tokens(self):
         res = self.client.post(REGISTER_URL, student_payload(), format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        # With EMAIL_VERIFICATION_REQUIRED=False (test settings) the legacy
+        # auto-login shape is preserved; production returns no tokens.
         self.assertIn("access", res.data)
         self.assertIn("refresh", res.data)
 
@@ -305,4 +308,141 @@ class PasswordResetTests(APITestCase):
             {"uidb64": uid, "token": "bad-token", "password": "N3wPassword#42"},
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class EmailVerificationTests(APITestCase):
+    """End-to-end coverage of register → email → verify → login.
+
+    Runs with the verification gate forced ON, mirroring production, so it
+    exercises the real login block for unverified users regardless of the
+    test-settings override.
+    """
+
+    VERIFY_URL = "/api/v1/auth/verify-email"
+    RESEND_URL = "/api/v1/auth/resend-verification"
+
+    def setUp(self):
+        # Force the production gate for this class only.
+        patcher = override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+        patcher.enable()
+        self.addCleanup(patcher.disable)
+
+    @staticmethod
+    def _link_parts(user):
+        from apps.users.models import EmailVerificationToken
+
+        token_obj = EmailVerificationToken.objects.filter(user=user).latest("created_at")
+        # Recover the raw token only in tests by re-hashing candidate values
+        # is impossible; instead issue directly to capture the raw value.
+        _obj, raw = EmailVerificationToken.issue(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        return uid, raw, token_obj
+
+    def test_register_sends_verification_email(self):
+        res = self.client.post(REGISTER_URL, student_payload(), format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertIn("detail", res.data)
+        user = User.objects.get(email="riya@example.com")
+        self.assertFalse(user.is_email_verified)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("verify", mail.outbox[0].subject.lower())
+        self.assertIn("http", mail.outbox[0].body)
+
+    def test_login_blocked_until_verified(self):
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        res = self.client.post(
+            LOGIN_URL,
+            {"email": "riya@example.com", "password": STUDENT_PASSWORD},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("verify", str(res.data).lower())
+
+    def test_verify_then_login_succeeds(self):
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        user = User.objects.get(email="riya@example.com")
+        uid, raw, _old = self._link_parts(user)
+
+        res = self.client.post(
+            self.VERIFY_URL, {"uidb64": uid, "token": raw}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.is_email_verified)
+
+        login = self.client.post(
+            LOGIN_URL,
+            {"email": "riya@example.com", "password": STUDENT_PASSWORD},
+            format="json",
+        )
+        self.assertEqual(login.status_code, status.HTTP_200_OK)
+        self.assertIn("access", login.data)
+
+    def test_token_single_use(self):
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        user = User.objects.get(email="riya@example.com")
+        uid, raw, _old = self._link_parts(user)
+        self.client.post(self.VERIFY_URL, {"uidb64": uid, "token": raw}, format="json")
+
+        res = self.client.post(
+            self.VERIFY_URL, {"uidb64": uid, "token": raw}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["status"], "already_verified")
+
+    def test_invalid_token_rejected(self):
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        user = User.objects.get(email="riya@example.com")
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        res = self.client.post(
+            self.VERIFY_URL, {"uidb64": uid, "token": "not-a-real-token"}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["status"], "invalid")
+
+    def test_expired_token_rejected(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.users.models import EmailVerificationToken
+
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        user = User.objects.get(email="riya@example.com")
+        obj, raw = EmailVerificationToken.issue(user)
+        EmailVerificationToken.objects.filter(pk=obj.pk).update(
+            expires_at=timezone.now() - timedelta(hours=1)
+        )
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        res = self.client.post(
+            self.VERIFY_URL, {"uidb64": uid, "token": raw}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["status"], "expired")
+        user.refresh_from_db()
+        self.assertFalse(user.is_email_verified)
+
+    def test_resend_invalidates_old_token(self):
+        self.client.post(REGISTER_URL, student_payload(), format="json")
+        user = User.objects.get(email="riya@example.com")
+        uid, raw_old, _old = self._link_parts(user)
+
+        res = self.client.post(
+            self.RESEND_URL, {"email": "riya@example.com"}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 2)  # registration + resend
+
+        # The old link must no longer verify; the new one must.
+        stale = self.client.post(
+            self.VERIFY_URL, {"uidb64": uid, "token": raw_old}, format="json"
+        )
+        self.assertEqual(stale.data["status"], "invalid")
+
+    def test_resend_never_reveals_existing_accounts(self):
+        res = self.client.post(
+            self.RESEND_URL, {"email": "nobody@example.com"}, format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)

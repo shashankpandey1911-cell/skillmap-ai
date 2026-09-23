@@ -3,8 +3,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from apps.core.permissions import IsStudent
-
+from apps.core.permissions import IsVerifiedStudent
 from .models import Skill, UserSkill
 from .serializers import SkillSerializer, UserSkillSerializer, UserSkillWriteSerializer
 
@@ -35,7 +34,7 @@ class UserSkillListCreateView(generics.ListCreateAPIView):
     ?search= filters by skill name; ?category= filters by catalog category.
     """
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = UserSkillSerializer  # GET representation
     pagination_class = None
 
@@ -65,7 +64,7 @@ class UserSkillListCreateView(generics.ListCreateAPIView):
 class UserSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Owner-scoped PATCH/DELETE of one of the student's skills."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def get_queryset(self):
         return UserSkill.objects.filter(user=self.request.user)
@@ -81,4 +80,4 @@ class UserSkillDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(UserSkillSerializer(serializer.instance).data)
+        return Response(UserSkillSerializer(serializer.instance).data)

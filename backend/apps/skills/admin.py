@@ -14,4 +14,4 @@ class SkillAdmin(admin.ModelAdmin):
 class UserSkillAdmin(admin.ModelAdmin):
     list_display = ("user", "skill", "proficiency_level", "experience_level", "assessment_score")
     list_filter = ("skill__category", "experience_level")
-    search_fields = ("user__username", "skill__name")
+    search_fields = ("user__username", "skill__name")

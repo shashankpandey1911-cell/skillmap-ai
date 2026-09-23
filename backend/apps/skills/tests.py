@@ -212,4 +212,4 @@ class UserSkillCrudTests(APITestCase):
         )
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
         res = self.client.get(SKILLS_URL)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)

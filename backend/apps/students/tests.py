@@ -241,4 +241,4 @@ class AccessControlTests(APITestCase):
         )
         login(self.client, "anita@example.com")
         for url in (ME_URL, PROJECTS_URL, CERTS_URL):
-            self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)

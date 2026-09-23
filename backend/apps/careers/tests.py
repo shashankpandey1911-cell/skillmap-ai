@@ -654,4 +654,4 @@ class CareerMatchApiTests(APITestCase):
         res = self.client.get(self.MATCHES_URL)
         titles = [m["career"]["title"] for m in res.data["matches"]]
         self.assertNotIn("Retired Role", titles)
-
+

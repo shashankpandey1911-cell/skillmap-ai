@@ -26,7 +26,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsAdmin, IsStudent
+from apps.core.permissions import IsAdmin, IsVerifiedStudent
 from apps.students.models import StudentProfile
 
 from .models import LearningResource, ResourceCompletion
@@ -157,7 +157,7 @@ class ResourceCompleteView(APIView):
     Students only, and only for themselves: completion is a personal action.
     """
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def _get_resource(self, pk):
         return get_object_or_404(

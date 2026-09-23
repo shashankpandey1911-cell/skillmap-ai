@@ -21,7 +21,8 @@ interface AuthContextValue {
   /** True while restoring the session on first load. */
   loading: boolean
   login: (username: string, password: string) => Promise<User>
-  register: (payload: Parameters<typeof apiRegister>[0]) => Promise<User>
+  /** Returns the signed-in user, or null when email verification is pending. */
+  register: (payload: Parameters<typeof apiRegister>[0]) => Promise<User | null>
   logout: () => void
 }
 
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (payload: Parameters<typeof apiRegister>[0]) => {
     const u = await apiRegister(payload)
-    setUser(u)
+    setUser(u) // null is fine: means "check your email", no session yet
     return u
   }, [])
 

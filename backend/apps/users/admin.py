@@ -8,4 +8,4 @@ from apps.users.models import User
 class SkillMapUserAdmin(UserAdmin):
     list_display = ("username", "email", "role", "is_staff", "is_active")
     list_filter = ("role", "is_staff", "is_active")
-    fieldsets = UserAdmin.fieldsets + (("SkillMap", {"fields": ("role", "phone", "avatar")}),)
+    fieldsets = UserAdmin.fieldsets + (("SkillMap", {"fields": ("role", "phone", "avatar")}),)

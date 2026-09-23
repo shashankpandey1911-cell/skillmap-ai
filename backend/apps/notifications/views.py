@@ -5,7 +5,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsStudent
+from apps.core.permissions import IsVerifiedStudent
 
 from .models import Notification
 from .serializers import NotificationSerializer

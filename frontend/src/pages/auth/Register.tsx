@@ -5,6 +5,7 @@ import { roleHome } from '../../auth/guards'
 import { Alert, Button, Card, Input, Select } from '../../components/ui'
 import { extractApiError, extractFieldErrors } from '../../utils/errors'
 import type { RegisterPayload } from '../../api/endpoints/auth'
+import { CheckYourEmail } from './CheckYourEmail'
 
 const YEARS = [
   { value: '', label: 'Select year' },
@@ -14,6 +15,7 @@ const YEARS = [
 export function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -51,6 +53,11 @@ export function Register() {
     setSubmitting(true)
     try {
       const user = await register(payload)
+      if (!user) {
+        // Email verification required — show the check-your-email step.
+        setPendingEmail(email.trim())
+        return
+      }
       navigate(roleHome[user.role], { replace: true })
     } catch (err) {
       const fieldErrs = extractFieldErrors(err)
@@ -62,6 +69,10 @@ export function Register() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (pendingEmail) {
+    return <CheckYourEmail email={pendingEmail} />
   }
 
   return (

@@ -22,7 +22,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsAdmin, IsStudent
+from apps.core.permissions import IsAdmin, IsVerifiedStudent
 
 from .models import Assessment, AssessmentResult, Question, StudentAttempt
 from .serializers import (
@@ -65,7 +65,7 @@ def _public_context(user) -> dict:
 class AssessmentListView(generics.ListAPIView):
     """Published assessments the student can take, with their own stats."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = AssessmentPublicSerializer
     pagination_class = None
 
@@ -79,7 +79,7 @@ class AssessmentListView(generics.ListAPIView):
 
 
 class AssessmentDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = AssessmentPublicSerializer
 
     def get_queryset(self):
@@ -98,7 +98,7 @@ class StartAttemptView(APIView):
     only revealed in the post-submission result.
     """
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request, pk):
         assessment = get_object_or_404(
@@ -129,7 +129,7 @@ class StartAttemptView(APIView):
 class SubmitAttemptView(APIView):
     """POST submit: score the run, persist the result, update the skill."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
 
     def post(self, request, pk):
         payload = SubmitAttemptSerializer(data=request.data)
@@ -158,7 +158,7 @@ class SubmitAttemptView(APIView):
 class MyResultsView(generics.ListAPIView):
     """The student's completed assessments, newest first, with reviews."""
 
-    permission_classes = [IsStudent]
+    permission_classes = [IsVerifiedStudent]
     serializer_class = AssessmentResultSerializer
     pagination_class = None
 

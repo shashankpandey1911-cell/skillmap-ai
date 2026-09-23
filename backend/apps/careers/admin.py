@@ -25,4 +25,4 @@ class CareerAdmin(admin.ModelAdmin):
 class CareerSkillRequirementAdmin(admin.ModelAdmin):
     list_display = ("career", "skill", "target_level", "importance")
     list_filter = ("importance",)
-    search_fields = ("career__title", "skill__name")
+    search_fields = ("career__title", "skill__name")

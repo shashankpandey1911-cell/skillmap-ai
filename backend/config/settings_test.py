@@ -28,3 +28,17 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+# Email verification is opt-out in tests: suites register users via the API
+# and sign in immediately. The verification flow itself is covered by the
+# dedicated tests in apps.users.tests.EmailVerificationTests.
+EMAIL_VERIFICATION_REQUIRED = False
+
+# Missing "email_verification" rate would KeyError in ResendVerificationThrottle.
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_THROTTLE_RATES": {
+        **REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],  # noqa: F405
+        "email_verification": "100000/hour",
+    },
+}

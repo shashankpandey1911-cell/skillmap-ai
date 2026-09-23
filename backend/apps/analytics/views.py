@@ -48,4 +48,4 @@ class AdminDashboardSummaryView(APIView):
                 "professors": User.objects.filter(role=User.Role.PROFESSOR).count(),
                 "admins": User.objects.filter(role=User.Role.ADMIN).count(),
             }
-        )
+        )

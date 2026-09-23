@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { roleHome } from '../../auth/guards'
 import { Alert, Button, Input } from '../../components/ui'
 import { extractApiError } from '../../utils/errors'
+import { resendVerification } from '../../api/endpoints/auth'
 
 export function Login() {
   const { login } = useAuth()
@@ -13,6 +14,9 @@ export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [unverified, setUnverified] = useState(false)
+  const [resent, setResent] = useState(false)
+  const [resending, setResending] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const from = (location.state as { from?: string } | null)?.from
@@ -20,14 +24,35 @@ export function Login() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    setUnverified(false)
+    setResent(false)
     setSubmitting(true)
     try {
       const user = await login(email.trim(), password)
       navigate(from ?? roleHome[user.role], { replace: true })
     } catch (err) {
-      setError(extractApiError(err, 'Unable to log in. Check your email and password.'))
+      const message = extractApiError(err, 'Unable to log in. Check your email and password.')
+      setError(message)
+      // The backend returns a distinct message for unverified accounts so the
+      // UI can offer a resend instead of a dead end.
+      if (message.toLowerCase().includes('verify')) {
+        setUnverified(true)
+      }
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleResend = async () => {
+    setResending(true)
+    try {
+      await resendVerification(email.trim())
+      setResent(true)
+      setError(null)
+    } catch {
+      setResent(false)
+    } finally {
+      setResending(false)
     }
   }
 
@@ -91,6 +116,23 @@ export function Login() {
           </div>
 
           {error && <Alert tone="error" className="mb-6">{error}</Alert>}
+          {unverified && !resent && (
+            <div className="mb-6">
+              <Button
+                variant="secondary"
+                className="w-full"
+                loading={resending}
+                onClick={handleResend}
+              >
+                Resend verification email
+              </Button>
+            </div>
+          )}
+          {unverified && resent && (
+            <Alert tone="success" className="mb-6">
+              A new verification link has been sent to {email}. Check your inbox.
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
