@@ -19,7 +19,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load backend/.env if present (dev convenience; production uses real env vars).
 load_dotenv(BASE_DIR / ".env")
 
-
 def _env_bool(name: str, default: bool = False) -> bool:
     return os.environ.get(name, str(default)).lower() in ("1", "true", "yes", "on")
 
@@ -198,8 +197,9 @@ CORS_ALLOWED_ORIGINS = _env_list(
 )
 
 # ---------------------------------------------------------------- Email
-# Dev convenience: print emails to the console instead of sending them.
-if DEBUG:
+# Use real SMTP whenever EMAIL_HOST is configured (works in local dev too);
+# otherwise print emails to the console as a dev convenience.
+if DEBUG and not os.environ.get("EMAIL_HOST"):
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     # Production SMTP — all credentials from environment variables only.
